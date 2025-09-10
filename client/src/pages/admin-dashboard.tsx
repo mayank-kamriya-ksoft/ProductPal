@@ -18,6 +18,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import ProductCard from "@/components/product-card";
+import ProductEditDialog from "@/components/product-edit-dialog";
 import Sidebar, { SidebarItem } from "@/components/sidebar";
 
 const createUserSchema = z.object({
@@ -35,6 +36,7 @@ export default function AdminDashboard() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -173,6 +175,43 @@ export default function AdminDashboard() {
       });
     },
   });
+
+  const editProductMutation = useMutation({
+    mutationFn: async ({ productId, updates }: { productId: string; updates: Partial<Product> }) => {
+      const res = await apiRequest("PATCH", `/api/products/${productId}`, updates);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      setShowEditDialog(false);
+      setSelectedProduct(null);
+      toast({
+        title: "Product updated",
+        description: "The product has been successfully updated.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEdit = (product: Product) => {
+    setSelectedProduct(product);
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEdit = (updates: Partial<Product>) => {
+    if (selectedProduct) {
+      editProductMutation.mutate({
+        productId: selectedProduct.id,
+        updates
+      });
+    }
+  };
 
   const sidebarItems: SidebarItem[] = [
     {
@@ -430,7 +469,8 @@ export default function AdminDashboard() {
                             onApprove={tab === "pending" ? () => handleApprove(product.id) : undefined}
                             onReject={tab === "pending" ? () => handleReject(product) : undefined}
                             onViewPublic={product.status === "approved" ? () => handleViewPublicPage(product.uniqueId) : undefined}
-                            isLoading={approveProductMutation.isPending || rejectProductMutation.isPending}
+                            onEdit={() => handleEdit(product)}
+                            isLoading={approveProductMutation.isPending || rejectProductMutation.isPending || editProductMutation.isPending}
                           />
                         ))}
                       </div>
@@ -559,6 +599,17 @@ export default function AdminDashboard() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Product Dialog */}
+      {selectedProduct && (
+        <ProductEditDialog
+          product={selectedProduct}
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          onSave={handleSaveEdit}
+          isLoading={editProductMutation.isPending}
+        />
+      )}
     </div>
   );
 }
