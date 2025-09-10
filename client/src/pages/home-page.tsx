@@ -18,6 +18,12 @@ export default function HomePage() {
   const { data: products = [], isLoading, refetch } = useQuery<Product[]>({
     queryKey: ["/api/products", user?.id],
     enabled: !!user?.id,
+    queryFn: async () => {
+      const res = await fetch("/api/products", { credentials: "include" });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    },
   });
 
   const handleLogout = () => {

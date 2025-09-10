@@ -54,27 +54,52 @@ export default function AdminDashboard() {
 
   const { data: pendingProducts = [], isLoading: pendingLoading } = useQuery<Product[]>({
     queryKey: ["/api/products", "pending"],
-    queryFn: () => fetch("/api/products?status=pending").then(res => res.json()),
+    queryFn: async () => {
+      const res = await fetch("/api/products?status=pending", { credentials: "include" });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    },
   });
 
   const { data: approvedProducts = [], isLoading: approvedLoading } = useQuery<Product[]>({
     queryKey: ["/api/products", "approved"],
-    queryFn: () => fetch("/api/products?status=approved").then(res => res.json()),
+    queryFn: async () => {
+      const res = await fetch("/api/products?status=approved", { credentials: "include" });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    },
   });
 
   const { data: rejectedProducts = [], isLoading: rejectedLoading } = useQuery<Product[]>({
     queryKey: ["/api/products", "rejected"],
-    queryFn: () => fetch("/api/products?status=rejected").then(res => res.json()),
+    queryFn: async () => {
+      const res = await fetch("/api/products?status=rejected", { credentials: "include" });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    },
   });
 
   const { data: allProducts = [], isLoading: allLoading } = useQuery<Product[]>({
     queryKey: ["/api/products"],
-    queryFn: () => fetch("/api/products").then(res => res.json()),
+    queryFn: async () => {
+      const res = await fetch("/api/products", { credentials: "include" });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    },
   });
 
   const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
     queryKey: ["/api/users"],
-    queryFn: () => fetch("/api/users").then(res => res.json()),
+    queryFn: async () => {
+      const res = await fetch("/api/users", { credentials: "include" });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    },
   });
 
   const approveProductMutation = useMutation({
