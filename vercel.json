@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "server/index.ts",
+      "src": "package.json",
       "use": "@vercel/node",
       "config": {
         "includeFiles": ["dist/**", "client/**", "shared/**", "attached_assets/**"]
@@ -17,5 +17,7 @@
   ],
   "env": {
     "NODE_ENV": "production"
-  }
+  },
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
 }
