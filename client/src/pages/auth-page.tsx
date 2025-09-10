@@ -129,7 +129,7 @@ export default function AuthPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => handleDemoLogin({ username: "operator", password: "operator123" })}
+                  onClick={() => handleDemoLogin({ username: "op2", password: "test123" })}
                   disabled={loginMutation.isPending}
                   data-testid="button-demo-operator"
                   className="text-sm"
