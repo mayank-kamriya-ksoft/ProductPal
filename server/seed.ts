@@ -16,27 +16,45 @@ async function seedDatabase() {
 
     // Check if admin already exists
     const existingAdmin = await storage.getUserByUsername("admin");
-    if (existingAdmin) {
-      console.log("Admin user already exists, skipping seed.");
+    const existingOperator = await storage.getUserByUsername("operator");
+
+    // Create admin user if doesn't exist
+    if (!existingAdmin) {
+      const adminPassword = "admin123";
+      const hashedPassword = await hashPassword(adminPassword);
+
+      await storage.createUser({
+        username: "admin",
+        email: "admin@greengoldseeds.com",
+        password: hashedPassword,
+        role: "admin",
+      });
+      console.log("✅ Admin user created");
+    }
+
+    // Create operator user if doesn't exist
+    if (!existingOperator) {
+      const operatorPassword = "operator123";
+      const operatorHashedPassword = await hashPassword(operatorPassword);
+
+      await storage.createUser({
+        username: "operator",
+        email: "operator@greengoldseeds.com",
+        password: operatorHashedPassword,
+        role: "operator",
+      });
+      console.log("✅ Operator user created");
+    }
+
+    if (existingAdmin && existingOperator) {
+      console.log("Demo users already exist, skipping seed.");
       return;
     }
 
-    // Create default admin user
-    const adminPassword = "admin123";
-    const hashedPassword = await hashPassword(adminPassword);
-
-    const admin = await storage.createUser({
-      username: "admin",
-      email: "admin@greengoldseeds.com",
-      password: hashedPassword,
-      role: "admin",
-    });
-
     console.log("✅ Database seeded successfully!");
-    console.log("📧 Admin credentials:");
-    console.log("   Username: admin");
-    console.log("   Password: admin123");
-    console.log("   Email: admin@greengoldseeds.com");
+    console.log("📧 Demo credentials:");
+    console.log("   Admin - Username: admin, Password: admin123");
+    console.log("   Operator - Username: operator, Password: operator123");
     
     process.exit(0);
   } catch (error) {

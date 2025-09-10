@@ -50,6 +50,12 @@ export default function AuthPage() {
     });
   };
 
+  const handleDemoLogin = (credentials: LoginData) => {
+    loginForm.setValue("username", credentials.username);
+    loginForm.setValue("password", credentials.password);
+    onLogin(credentials);
+  };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-yellow-50 px-4">
@@ -108,6 +114,30 @@ export default function AuthPage() {
                 </Button>
               </form>
             </Form>
+            
+            <div className="mt-6 pt-6 border-t">
+              <p className="text-sm text-muted-foreground text-center mb-4">Quick Demo Access</p>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => handleDemoLogin({ username: "admin", password: "admin123" })}
+                  disabled={loginMutation.isPending}
+                  data-testid="button-demo-admin"
+                  className="text-sm"
+                >
+                  Demo Admin Login
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleDemoLogin({ username: "operator", password: "operator123" })}
+                  disabled={loginMutation.isPending}
+                  data-testid="button-demo-operator"
+                  className="text-sm"
+                >
+                  Demo Operator Login
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
