@@ -2,6 +2,11 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { fileURLToPath } from 'url';
+
+// Get the current directory name
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   plugins: [
@@ -18,15 +23,21 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path.resolve(process.cwd(), "client", "src"),
-      "@shared": path.resolve(process.cwd(), "shared"),
-      "@assets": path.resolve(process.cwd(), "attached_assets"),
+      "@": path.resolve(__dirname, "client", "src"),
+      "@shared": path.resolve(__dirname, "shared"),
+      "@assets": path.resolve(__dirname, "attached_assets"),
     },
   },
-  root: path.resolve(process.cwd(), "client"),
+  // Use absolute path for root
+  root: path.resolve(__dirname, "client"),
   build: {
-    outDir: path.resolve(process.cwd(), "dist/public"),
+    // Use absolute path for outDir
+    outDir: path.resolve(__dirname, "dist", "public"),
     emptyOutDir: true,
+    // Explicitly set the rollup input
+    rollupOptions: {
+      input: path.resolve(__dirname, "client", "index.html"),
+    },
   },
   server: {
     fs: {
