@@ -240,35 +240,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const getProductsForTab = (tab: string) => {
-    switch (tab) {
-      case "pending":
-        return pendingProducts;
-      case "approved":
-        return approvedProducts;
-      case "rejected":
-        return rejectedProducts;
-      case "all":
-        return allProducts;
-      default:
-        return [];
-    }
-  };
-
-  const getLoadingForTab = (tab: string) => {
-    switch (tab) {
-      case "pending":
-        return pendingLoading;
-      case "approved":
-        return approvedLoading;
-      case "rejected":
-        return rejectedLoading;
-      case "all":
-        return allLoading;
-      default:
-        return false;
-    }
-  };
 
   const renderOverview = () => (
     <div className="space-y-6">
@@ -397,30 +368,49 @@ export default function AdminDashboard() {
                     </div>
                   )
                 ) : (
-                  getLoadingForTab(tab) ? (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">Loading products...</p>
-                    </div>
-                  ) : getProductsForTab(tab).length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">
-                        No {tab === "all" ? "" : tab} products found.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid gap-6">
-                      {getProductsForTab(tab).map((product) => (
-                        <ProductCard
-                          key={product.id}
-                          product={product}
-                          onApprove={tab === "pending" ? () => handleApprove(product.id) : undefined}
-                          onReject={tab === "pending" ? () => handleReject(product) : undefined}
-                          onViewPublic={product.status === "approved" ? () => handleViewPublicPage(product.uniqueId) : undefined}
-                          isLoading={approveProductMutation.isPending || rejectProductMutation.isPending}
-                        />
-                      ))}
-                    </div>
-                  )
+                  (() => {
+                    const isLoading = tab === "pending" ? pendingLoading : 
+                                     tab === "approved" ? approvedLoading : 
+                                     tab === "rejected" ? rejectedLoading : 
+                                     tab === "all" ? allLoading : false;
+                    const products = tab === "pending" ? pendingProducts : 
+                                    tab === "approved" ? approvedProducts : 
+                                    tab === "rejected" ? rejectedProducts : 
+                                    tab === "all" ? allProducts : [];
+                    
+                    if (isLoading) {
+                      return (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">Loading products...</p>
+                        </div>
+                      );
+                    }
+                    
+                    if (products.length === 0) {
+                      return (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">
+                            No {tab === "all" ? "" : tab} products found.
+                          </p>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div className="grid gap-6">
+                        {products.map((product) => (
+                          <ProductCard
+                            key={product.id}
+                            product={product}
+                            onApprove={tab === "pending" ? () => handleApprove(product.id) : undefined}
+                            onReject={tab === "pending" ? () => handleReject(product) : undefined}
+                            onViewPublic={product.status === "approved" ? () => handleViewPublicPage(product.uniqueId) : undefined}
+                            isLoading={approveProductMutation.isPending || rejectProductMutation.isPending}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })()
                 )}
               </div>
             )
