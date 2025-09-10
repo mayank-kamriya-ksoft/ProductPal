@@ -4,17 +4,16 @@ import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  root: resolve(__dirname), // Set root to the client directory
+  build: {
+    outDir: resolve(__dirname, 'dist'),
+    rollupOptions: {
+      input: resolve(__dirname, 'index.html'),
+    },
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
     },
   },
-  build: {
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-      },
-    },
-  },
-  root: '.', // Explicitly set root directory
 })
