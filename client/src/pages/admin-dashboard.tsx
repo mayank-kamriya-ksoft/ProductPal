@@ -5,13 +5,12 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Sprout, LogOut, Clock, CheckCircle, XCircle, List, Eye, Check, X, Users, Plus } from "lucide-react";
+import { Clock, CheckCircle, XCircle, List, Eye, Check, X, Users, Plus, BarChart3, Home } from "lucide-react";
 import { Product, User } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +18,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import ProductCard from "@/components/product-card";
+import Sidebar, { SidebarItem } from "@/components/sidebar";
 
 const createUserSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [activeTab, setActiveTab] = useState("pending");
+  const [activeTab, setActiveTab] = useState("overview");
 
   const createUserForm = useForm<CreateUserData>({
     resolver: zodResolver(createUserSchema),
@@ -149,6 +149,52 @@ export default function AdminDashboard() {
     },
   });
 
+  const sidebarItems: SidebarItem[] = [
+    {
+      id: "overview",
+      label: "Dashboard",
+      icon: <Home className="h-4 w-4" />,
+      onClick: () => setActiveTab("overview"),
+      active: activeTab === "overview",
+    },
+    {
+      id: "pending",
+      label: "Pending Products",
+      icon: <Clock className="h-4 w-4" />,
+      onClick: () => setActiveTab("pending"),
+      badge: pendingProducts.length,
+      active: activeTab === "pending",
+    },
+    {
+      id: "approved",
+      label: "Approved Products",
+      icon: <CheckCircle className="h-4 w-4" />,
+      onClick: () => setActiveTab("approved"),
+      active: activeTab === "approved",
+    },
+    {
+      id: "rejected",
+      label: "Rejected Products",
+      icon: <XCircle className="h-4 w-4" />,
+      onClick: () => setActiveTab("rejected"),
+      active: activeTab === "rejected",
+    },
+    {
+      id: "all",
+      label: "All Products",
+      icon: <List className="h-4 w-4" />,
+      onClick: () => setActiveTab("all"),
+      active: activeTab === "all",
+    },
+    {
+      id: "users",
+      label: "User Management",
+      icon: <Users className="h-4 w-4" />,
+      onClick: () => setActiveTab("users"),
+      active: activeTab === "users",
+    },
+  ];
+
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
       onSuccess: () => {
@@ -224,72 +270,79 @@ export default function AdminDashboard() {
     }
   };
 
+  const renderOverview = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-foreground">Dashboard Overview</h2>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <Clock className="h-8 w-8 text-yellow-500" />
+              <div>
+                <p className="text-2xl font-bold">{pendingProducts.length}</p>
+                <p className="text-sm text-muted-foreground">Pending Products</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-8 w-8 text-green-500" />
+              <div>
+                <p className="text-2xl font-bold">{approvedProducts.length}</p>
+                <p className="text-sm text-muted-foreground">Approved Products</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <XCircle className="h-8 w-8 text-red-500" />
+              <div>
+                <p className="text-2xl font-bold">{rejectedProducts.length}</p>
+                <p className="text-sm text-muted-foreground">Rejected Products</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <Users className="h-8 w-8 text-blue-500" />
+              <div>
+                <p className="text-2xl font-bold">{users.length}</p>
+                <p className="text-sm text-muted-foreground">Total Users</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation Header */}
-      <nav className="bg-card border-b border-border px-6 py-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
-              <Sprout className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-foreground">Green Gold Seeds - Admin Panel</h1>
-              <p className="text-sm text-muted-foreground">Product Management & Approval</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-muted-foreground">
-              Welcome, <span className="font-medium">{user?.username}</span>
-            </span>
-            <Button 
-              onClick={handleLogout} 
-              variant="outline"
-              disabled={logoutMutation.isPending}
-              data-testid="button-logout"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
-          </div>
-        </div>
-      </nav>
+      {/* Sidebar */}
+      <Sidebar
+        title="Green Gold Seeds"
+        subtitle="Admin Panel"
+        userName={user?.username || "Admin"}
+        items={sidebarItems}
+        onLogout={handleLogout}
+        isLoggingOut={logoutMutation.isPending}
+      />
 
       {/* Main Content */}
-      <div className="container mx-auto p-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="pending" className="flex items-center gap-2" data-testid="tab-pending">
-              <Clock className="h-4 w-4" />
-              Pending
-              {pendingProducts.length > 0 && (
-                <Badge variant="secondary" className="ml-1 bg-secondary text-secondary-foreground">
-                  {pendingProducts.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="approved" className="flex items-center gap-2" data-testid="tab-approved">
-              <CheckCircle className="h-4 w-4" />
-              Approved
-            </TabsTrigger>
-            <TabsTrigger value="rejected" className="flex items-center gap-2" data-testid="tab-rejected">
-              <XCircle className="h-4 w-4" />
-              Rejected
-            </TabsTrigger>
-            <TabsTrigger value="all" className="flex items-center gap-2" data-testid="tab-all">
-              <List className="h-4 w-4" />
-              All Products
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2" data-testid="tab-users">
-              <Users className="h-4 w-4" />
-              Users
-            </TabsTrigger>
-          </TabsList>
+      <div className="lg:pl-64">
+        <div className="container mx-auto p-6">
 
-          {["pending", "approved", "rejected", "all", "users"].map((tab) => (
-            <TabsContent key={tab} value={tab} className="mt-6">
-              <div className="space-y-6">
+          {activeTab === "overview" && renderOverview()}
+          
+          {["pending", "approved", "rejected", "all", "users"].map((tab) => 
+            activeTab === tab && (
+              <div key={tab} className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold text-foreground capitalize">
                     {tab === "all" ? "All Products" : tab === "users" ? "User Management" : `${tab} Products`}
@@ -370,9 +423,9 @@ export default function AdminDashboard() {
                   )
                 )}
               </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+            )
+          )}
+        </div>
       </div>
 
       {/* Rejection Dialog */}
