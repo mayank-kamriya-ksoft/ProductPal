@@ -19,7 +19,11 @@ const productFormSchema = insertProductSchema.omit({
 
 type ProductFormData = z.infer<typeof productFormSchema>;
 
-export default function ProductForm() {
+interface ProductFormProps {
+  onSuccess?: () => void;
+}
+
+export default function ProductForm({ onSuccess }: ProductFormProps = {}) {
   const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
 
@@ -50,7 +54,7 @@ export default function ProductForm() {
       const formData = new FormData();
       
       Object.entries(data).forEach(([key, value]) => {
-        formData.append(key, value.toString());
+        formData.append(key, value?.toString() || "");
       });
       
       if (file) {
@@ -77,6 +81,7 @@ export default function ProductForm() {
       });
       form.reset();
       setFile(null);
+      onSuccess?.();
     },
     onError: (error: Error) => {
       toast({

@@ -132,7 +132,4 @@ export async function createSampleProducts() {
   }
 }
 
-// Auto-run when imported directly
-createSampleProducts()
-  .then(() => process.exit(0))
-  .catch(() => process.exit(1));
+// Note: Run this file directly with `npx tsx sample-products.ts` to create sample data
