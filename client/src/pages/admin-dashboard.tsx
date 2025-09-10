@@ -8,12 +8,25 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sprout, LogOut, Clock, CheckCircle, XCircle, List, Eye, Check, X } from "lucide-react";
-import { Product } from "@shared/schema";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Sprout, LogOut, Clock, CheckCircle, XCircle, List, Eye, Check, X, Users, Plus } from "lucide-react";
+import { Product, User } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import ProductCard from "@/components/product-card";
+
+const createUserSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+type CreateUserData = z.infer<typeof createUserSchema>;
 
 export default function AdminDashboard() {
   const { user, logoutMutation } = useAuth();
@@ -21,8 +34,18 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showCreateUserDialog, setShowCreateUserDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
+
+  const createUserForm = useForm<CreateUserData>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      password: "",
+    },
+  });
 
   if (user?.role !== "admin") {
     setLocation("/");
@@ -47,6 +70,11 @@ export default function AdminDashboard() {
   const { data: allProducts = [], isLoading: allLoading } = useQuery<Product[]>({
     queryKey: ["/api/products"],
     queryFn: () => fetch("/api/products").then(res => res.json()),
+  });
+
+  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+    queryFn: () => fetch("/api/users").then(res => res.json()),
   });
 
   const approveProductMutation = useMutation({
@@ -98,6 +126,29 @@ export default function AdminDashboard() {
     },
   });
 
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: CreateUserData) => {
+      const res = await apiRequest("POST", "/api/users", userData);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setShowCreateUserDialog(false);
+      createUserForm.reset();
+      toast({
+        title: "User created",
+        description: "Operator account has been created successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to create user",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
       onSuccess: () => {
@@ -126,6 +177,10 @@ export default function AdminDashboard() {
 
   const handleViewPublicPage = (uniqueId: string) => {
     window.open(`/track/${uniqueId}`, "_blank");
+  };
+
+  const handleCreateUser = (data: CreateUserData) => {
+    createUserMutation.mutate(data);
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -204,7 +259,7 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <div className="container mx-auto p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="pending" className="flex items-center gap-2" data-testid="tab-pending">
               <Clock className="h-4 w-4" />
               Pending
@@ -226,40 +281,93 @@ export default function AdminDashboard() {
               <List className="h-4 w-4" />
               All Products
             </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2" data-testid="tab-users">
+              <Users className="h-4 w-4" />
+              Users
+            </TabsTrigger>
           </TabsList>
 
-          {["pending", "approved", "rejected", "all"].map((tab) => (
+          {["pending", "approved", "rejected", "all", "users"].map((tab) => (
             <TabsContent key={tab} value={tab} className="mt-6">
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-bold text-foreground capitalize">
-                    {tab === "all" ? "All Products" : `${tab} Products`}
+                    {tab === "all" ? "All Products" : tab === "users" ? "User Management" : `${tab} Products`}
                   </h2>
+                  {tab === "users" && (
+                    <Button 
+                      onClick={() => setShowCreateUserDialog(true)}
+                      data-testid="button-create-user"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Operator
+                    </Button>
+                  )}
                 </div>
 
-                {getLoadingForTab(tab) ? (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">Loading products...</p>
-                  </div>
-                ) : getProductsForTab(tab).length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">
-                      No {tab === "all" ? "" : tab} products found.
-                    </p>
-                  </div>
+                {tab === "users" ? (
+                  usersLoading ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Loading users...</p>
+                    </div>
+                  ) : users.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">No users found.</p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {users.map((user) => (
+                        <Card key={user.id} data-testid={`card-user-${user.id}`}>
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <h3 className="font-semibold text-foreground" data-testid="text-username">
+                                  {user.username}
+                                </h3>
+                                <p className="text-sm text-muted-foreground" data-testid="text-email">
+                                  {user.email}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Created: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                                </p>
+                              </div>
+                              <Badge 
+                                variant={user.role === "admin" ? "default" : "secondary"}
+                                data-testid="badge-role"
+                              >
+                                {user.role}
+                              </Badge>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )
                 ) : (
-                  <div className="grid gap-6">
-                    {getProductsForTab(tab).map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        product={product}
-                        onApprove={tab === "pending" ? () => handleApprove(product.id) : undefined}
-                        onReject={tab === "pending" ? () => handleReject(product) : undefined}
-                        onViewPublic={product.status === "approved" ? () => handleViewPublicPage(product.uniqueId) : undefined}
-                        isLoading={approveProductMutation.isPending || rejectProductMutation.isPending}
-                      />
-                    ))}
-                  </div>
+                  getLoadingForTab(tab) ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">Loading products...</p>
+                    </div>
+                  ) : getProductsForTab(tab).length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">
+                        No {tab === "all" ? "" : tab} products found.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-6">
+                      {getProductsForTab(tab).map((product) => (
+                        <ProductCard
+                          key={product.id}
+                          product={product}
+                          onApprove={tab === "pending" ? () => handleApprove(product.id) : undefined}
+                          onReject={tab === "pending" ? () => handleReject(product) : undefined}
+                          onViewPublic={product.status === "approved" ? () => handleViewPublicPage(product.uniqueId) : undefined}
+                          isLoading={approveProductMutation.isPending || rejectProductMutation.isPending}
+                        />
+                      ))}
+                    </div>
+                  )
                 )}
               </div>
             </TabsContent>
@@ -306,6 +414,81 @@ export default function AdminDashboard() {
               {rejectProductMutation.isPending ? "Rejecting..." : "Reject Product"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create User Dialog */}
+      <Dialog open={showCreateUserDialog} onOpenChange={setShowCreateUserDialog}>
+        <DialogContent data-testid="dialog-create-user">
+          <DialogHeader>
+            <DialogTitle>Create Operator Account</DialogTitle>
+            <DialogDescription>
+              Create a new operator account for product submission.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...createUserForm}>
+            <form onSubmit={createUserForm.handleSubmit(handleCreateUser)} className="space-y-4">
+              <FormField
+                control={createUserForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input {...field} data-testid="input-create-username" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={createUserForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" {...field} data-testid="input-create-email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={createUserForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} data-testid="input-create-password" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  onClick={() => setShowCreateUserDialog(false)}
+                  data-testid="button-cancel-create-user"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={createUserMutation.isPending}
+                  data-testid="button-confirm-create-user"
+                >
+                  {createUserMutation.isPending ? "Creating..." : "Create User"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
