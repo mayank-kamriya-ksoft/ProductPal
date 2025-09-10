@@ -1,7 +1,7 @@
 import { users, products, type User, type InsertUser, type Product, type InsertProduct } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
-import session, { SessionStore } from "express-session";
+import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
 
@@ -23,11 +23,11 @@ export interface IStorage {
   updateProduct(id: string, updates: Partial<Product>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<boolean>;
   
-  sessionStore: SessionStore;
+  sessionStore: session.Store;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: SessionStore;
+  sessionStore: session.Store;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 
