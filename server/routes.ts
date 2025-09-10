@@ -225,6 +225,74 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Create operator account (admin only)
+  app.post("/api/users", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const { username, email, password } = req.body;
+
+      if (!username || !email || !password) {
+        return res.status(400).json({ message: "Username, email, and password are required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      const existingEmail = await storage.getUserByEmail(email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+
+      // Hash password
+      const { scrypt, randomBytes } = await import("crypto");
+      const { promisify } = await import("util");
+      const scryptAsync = promisify(scrypt);
+      
+      const salt = randomBytes(16).toString("hex");
+      const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+      const hashedPassword = `${buf.toString("hex")}.${salt}`;
+
+      // Create operator user
+      const user = await storage.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        role: "operator",
+      });
+
+      // Remove password from response
+      const { password: _, ...userResponse } = user;
+      res.status(201).json(userResponse);
+    } catch (error) {
+      console.error("Create user error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get all users (admin only)
+  app.get("/api/users", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || req.user?.role !== "admin") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const users = await storage.getAllUsers();
+      
+      // Remove passwords from response
+      const usersResponse = users.map(({ password, ...user }) => user);
+      res.json(usersResponse);
+    } catch (error) {
+      console.error("Get users error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Serve uploaded files
   app.get("/api/files/:filename", (req, res) => {
     const { filename } = req.params;
