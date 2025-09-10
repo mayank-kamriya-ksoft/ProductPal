@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-import viteConfig from "../vite.config";
+import react from "@vitejs/plugin-react";
 import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
@@ -27,7 +27,16 @@ export async function setupVite(app: Express, server: Server) {
   };
 
   const vite = await createViteServer({
-    ...viteConfig,
+    // Inline configuration instead of importing from vite.config.js
+    plugins: [react()],
+    resolve: {
+      alias: {
+        "@": path.resolve("client", "src"),
+        "@shared": path.resolve("shared"),
+        "@assets": path.resolve("attached_assets"),
+      },
+    },
+    root: "client",
     configFile: false,
     customLogger: {
       ...viteLogger,
