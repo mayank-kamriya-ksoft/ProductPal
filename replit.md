@@ -69,7 +69,7 @@ Product brochures are handled through a secure file upload system:
 
 ### Database and ORM
 - **Drizzle ORM**: Type-safe PostgreSQL ORM with migration support
-- **Neon Database**: Serverless PostgreSQL provider with connection pooling
+- **Supabase PostgreSQL**: Production database hosted on Supabase with transaction pooler
 - **Drizzle Kit**: CLI tool for schema management and migrations
 
 ### UI Component Libraries
@@ -94,3 +94,24 @@ Product brochures are handled through a secure file upload system:
 - **Multer**: Middleware for handling multipart/form-data file uploads
 - **File System**: Node.js built-in module for file operations
 - **Path**: Node.js built-in module for file path manipulation
+
+## Recent Changes
+
+### December 2024 - Production Deployment Setup
+
+**Database Migration to Supabase**: Migrated from Replit's built-in database to Supabase PostgreSQL for production hosting:
+- Project: greengoldseeds
+- Database: PostgreSQL with transaction pooler for connection optimization
+- Schema: Successfully pushed to production using Drizzle migrations
+- Demo Accounts: Configured with admin and operator demo credentials
+
+**Vercel Deployment Configuration**: Prepared application for Vercel hosting:
+- Build Process: Frontend (Vite) + Backend (ESBuild) compilation
+- Configuration: vercel.json with proper routing for SPA and API endpoints
+- Environment: DATABASE_URL configured for Supabase connection
+- File Structure: dist/public/ (frontend) and dist/index.js (backend)
+
+**Demo User Updates**: Updated demo login functionality:
+- Admin: username "admin" / password "admin123"  
+- Operator: username "op2" / password "test123" (email: op@test.com)
+- Product Assignment: All existing products assigned to op@test.com user
