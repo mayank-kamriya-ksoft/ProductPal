@@ -6,17 +6,15 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@": path.resolve("client", "src"),
-      "@shared": path.resolve("shared"),
-      "@assets": path.resolve("attached_assets"),
+      "@": path.resolve("src"),
+      "@shared": path.resolve("../shared"),
+      "@assets": path.resolve("../attached_assets"),
     },
   },
-  root: "client",
+  root: ".", // Build from client directory
   build: {
     outDir: "../dist/public",
     emptyOutDir: true,
-    rollupOptions: {
-      input: path.resolve("client", "index.html"),
-    },
   },
+  base: "./", // Use relative paths
 });
