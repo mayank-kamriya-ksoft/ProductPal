@@ -71,6 +71,8 @@ export const insertProductSchema = createInsertSchema(products).omit({
   submittedBy: true,
   approvedBy: true,
   status: true,
+}).extend({
+  submittedBy: z.string().optional(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

@@ -30,7 +30,8 @@ export default function ProductCard({
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | Date) => {
+    if (!dateString) return '';
     return new Date(dateString).toLocaleDateString();
   };
 

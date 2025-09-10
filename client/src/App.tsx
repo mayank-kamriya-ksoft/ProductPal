@@ -14,8 +14,8 @@ import PublicProduct from "@/pages/public-product";
 function Router() {
   return (
     <Switch>
-      <ProtectedRoute path="/" component={HomePage} />
-      <ProtectedRoute path="/admin" component={AdminDashboard} />
+      <ProtectedRoute path="/" component={() => <HomePage />} />
+      <ProtectedRoute path="/admin" component={() => <AdminDashboard />} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/track/:uniqueId" component={PublicProduct} />
       <Route component={NotFound} />
