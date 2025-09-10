@@ -1,17 +1,19 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Sprout, LogOut, Plus, List, Eye } from "lucide-react";
+import { Plus, List, Eye, Home, FileCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import ProductForm from "@/components/product-form";
 import { Product } from "@shared/schema";
+import Sidebar, { SidebarItem } from "@/components/sidebar";
 
 export default function HomePage() {
   const { user, logoutMutation } = useAuth();
   const [, setLocation] = useLocation();
+  const [activeTab, setActiveTab] = useState("overview");
 
   const { data: products = [], isLoading, refetch } = useQuery<Product[]>({
     queryKey: ["/api/products", user?.id],
@@ -48,57 +50,99 @@ export default function HomePage() {
     return new Date(dateString).toLocaleDateString('en-IN');
   };
 
+  const sidebarItems: SidebarItem[] = [
+    {
+      id: "overview",
+      label: "Dashboard",
+      icon: <Home className="h-4 w-4" />,
+      onClick: () => setActiveTab("overview"),
+      active: activeTab === "overview",
+    },
+    {
+      id: "submit",
+      label: "Submit Product",
+      icon: <Plus className="h-4 w-4" />,
+      onClick: () => setActiveTab("submit"),
+      active: activeTab === "submit",
+    },
+    {
+      id: "products",
+      label: "My Products",
+      icon: <List className="h-4 w-4" />,
+      onClick: () => setActiveTab("products"),
+      badge: products.length,
+      active: activeTab === "products",
+    },
+  ];
+
+  const renderOverview = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-foreground">Dashboard Overview</h2>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <FileCheck className="h-8 w-8 text-blue-500" />
+              <div>
+                <p className="text-2xl font-bold">{products.length}</p>
+                <p className="text-sm text-muted-foreground">Total Products</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <Plus className="h-8 w-8 text-green-500" />
+              <div>
+                <p className="text-2xl font-bold">{products.filter(p => p.status === 'pending').length}</p>
+                <p className="text-sm text-muted-foreground">Pending Approval</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <FileCheck className="h-8 w-8 text-green-600" />
+              <div>
+                <p className="text-2xl font-bold">{products.filter(p => p.status === 'approved').length}</p>
+                <p className="text-sm text-muted-foreground">Approved Products</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation Header */}
-      <nav className="bg-card border-b border-border px-6 py-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
-              <Sprout className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-foreground">Green Gold Seeds</h1>
-              <p className="text-sm text-muted-foreground">Product Tracking System</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-muted-foreground">
-              Welcome, <span className="font-medium">{user?.username}</span>
-            </span>
-            <Button 
-              onClick={handleLogout} 
-              variant="outline"
-              disabled={logoutMutation.isPending}
-              data-testid="button-logout"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
-          </div>
-        </div>
-      </nav>
+      {/* Sidebar */}
+      <Sidebar
+        title="Green Gold Seeds"
+        subtitle="Product Tracking System"
+        userName={user?.username || "Operator"}
+        items={sidebarItems}
+        onLogout={handleLogout}
+        isLoggingOut={logoutMutation.isPending}
+      />
       
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto p-6">
-        <Tabs defaultValue="submit" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="submit" className="flex items-center gap-2" data-testid="tab-submit">
-              <Plus className="h-4 w-4" />
-              Submit Product
-            </TabsTrigger>
-            <TabsTrigger value="products" className="flex items-center gap-2" data-testid="tab-products">
-              <List className="h-4 w-4" />
-              My Products ({products.length})
-            </TabsTrigger>
-          </TabsList>
+      <div className="lg:pl-64">
+        <div className="container mx-auto p-6">
           
-          <TabsContent value="submit" className="space-y-4">
-            <ProductForm onSuccess={() => refetch()} />
-          </TabsContent>
+          {activeTab === "overview" && renderOverview()}
           
-          <TabsContent value="products" className="space-y-4">
+          {activeTab === "submit" && (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold text-foreground">Submit Product</h2>
+              <ProductForm onSuccess={() => refetch()} />
+            </div>
+          )}
+          
+          {activeTab === "products" && (
+            <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-foreground">My Submitted Products</h2>
               <Button onClick={() => refetch()} variant="outline" size="sm" data-testid="button-refresh">
@@ -129,7 +173,7 @@ export default function HomePage() {
                   <List className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-foreground mb-2">No Products Submitted</h3>
                   <p className="text-muted-foreground mb-4">You haven't submitted any products yet.</p>
-                  <Button variant="outline" onClick={() => setLocation("?tab=submit")} data-testid="button-submit-first">
+                  <Button variant="outline" onClick={() => setActiveTab("submit")} data-testid="button-submit-first">
                     Submit Your First Product
                   </Button>
                 </CardContent>
@@ -186,8 +230,9 @@ export default function HomePage() {
                 ))}
               </div>
             )}
-          </TabsContent>
-        </Tabs>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
