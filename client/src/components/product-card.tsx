@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Check, X, Calendar, Package } from "lucide-react";
+import { Eye, Check, X, Calendar, Package, Edit } from "lucide-react";
 import { Product } from "@shared/schema";
 
 interface ProductCardProps {
@@ -9,6 +9,7 @@ interface ProductCardProps {
   onApprove?: () => void;
   onReject?: () => void;
   onViewPublic?: () => void;
+  onEdit?: () => void;
   isLoading?: boolean;
 }
 
@@ -17,6 +18,7 @@ export default function ProductCard({
   onApprove, 
   onReject, 
   onViewPublic, 
+  onEdit,
   isLoading = false 
 }: ProductCardProps) {
   const getStatusBadge = (status: string) => {
@@ -111,6 +113,19 @@ export default function ProductCard({
             >
               <Package className="h-4 w-4 mr-2" />
               View Public Page
+            </Button>
+          )}
+          
+          {onEdit && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={onEdit}
+              disabled={isLoading}
+              data-testid="button-edit"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
             </Button>
           )}
           
